@@ -1,0 +1,16 @@
+# Private network captures and browser sessions
+*.har
+captures/
+.auth/
+.browser-profile/
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# macOS
+.DS_Store
