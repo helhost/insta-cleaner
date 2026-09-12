@@ -1,6 +1,7 @@
 # Private network captures and browser sessions
 *.har
 captures/
+docs/
 .auth/
 .browser-profile/
 .env

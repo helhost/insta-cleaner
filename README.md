@@ -45,6 +45,9 @@ Following status and reliable author identification are not implemented.
 
 ## Next steps
 
+See [the implementation research](docs/implementation-research.md) for the project
+comparison, technical options, and recommended build order.
+
 1. Inspect the existing capture offline.
 2. Capture applying the Likes author filter for one account to understand author
    identification. No additional unlikes are needed for that investigation.
