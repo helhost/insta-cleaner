@@ -1,0 +1,2 @@
+# Only needed for the live browser observer; the HAR reader uses the stdlib.
+playwright>=1.50,<2
