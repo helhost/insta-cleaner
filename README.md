@@ -1,8 +1,203 @@
 # insta-cleaner
 
 An early experiment in reviewing and eventually cleaning up your own Instagram
-likes. For now, this repository only includes an offline HAR inspection tool.
-It does not log in, send requests, or change your Instagram account.
+likes. Includes an offline HAR reader and a browser observer for manual discovery.
+Neither tool automates unliking or deletion.
+
+## Application entry point
+
+With dependencies installed, collect Following using your existing saved login:
+
+```sh
+python3 instagram.py following
+```
+
+This runs headlessly, requests 100 accounts per page, saves a private snapshot in
+`.local-data/`, and exits. Close other collectors first because they share the
+browser profile. Use `--page-size 50` to request smaller pages, or
+`--channel chromium` for bundled Chromium instead of installed Chrome.
+If login is needed:
+
+```sh
+python3 instagram.py login
+```
+
+The reusable application code lives in `insta_cleaner/`. `collect_following()`
+returns a snapshot directly, without file handling or terminal output.
+`filter_by_following()` accepts preview rows and classifies explicit authors as
+followed, not-followed, or unknown. Missing/conflicting/inferred authors and
+account mismatches remain unknown; incomplete lists cannot establish absence.
+Identity is scoped using the session cookie, not independent server verification.
+Snapshots use schema version 2; the older development exports remain unchanged.
+
+The CLI currently supports login and Following collection. Likes collection and
+the filter helper are not yet connected into an end-to-end CLI preview, and no
+removal actions are implemented. Development observers below remain available.
+
+## Development: limited Likes pagination probe
+
+```sh
+python3 tools/probe_likes.py --pages 3
+```
+
+Close other collectors first. Open **Your activity → Likes** in the launched
+browser; the probe then loads the remaining pages automatically, saves a partial
+inventory in `.local-data/likes-probe-*.json`, and closes the browser. Keep filters
+unchanged and avoid removals during the run. The page limit is 1–5, default 3.
+
+To check explicit authors for a small sample after pagination:
+
+```sh
+python3 tools/probe_likes.py --pages 3 --authors 3
+```
+
+This opens three collected posts automatically and retains inferred evidence when
+explicit matching metadata is unavailable. It does not remove anything.
+
+The probe uses live request credentials held in memory, never credentials from
+HAR files. It parses only the observed `liked_next` instruction and never executes
+server UI expressions. Saved rows contain media IDs, post codes, product types,
+and author evidence. Suffix-only authors remain inferred. Missing continuation
+instructions are not treated as proof that the full history is complete. Explicit
+author lookup and full-history collection are later experiments.
+
+## Observe Likes in a browser
+
+Use Python 3.9 or newer. From the repository directory, install the browser
+dependency in a virtual environment:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+python3 -m playwright install chromium
+python3 tools/observe_likes.py
+```
+
+On Windows, activate with `.venv\Scripts\activate` instead. If Google Chrome is
+already installed, you can skip the Chromium installation and run:
+
+```sh
+python3 tools/observe_likes.py --channel chrome
+```
+
+1. Log into Instagram yourself in the new browser window, including any 2FA.
+2. Open **Your activity → Likes**.
+3. Wait for a Likes batch in the terminal, then open one of those posts normally
+   (leave Select mode off). Opening it in another tab in the same observer browser works too.
+4. Watch for **Author check ... MATCH**, **MISMATCH**, or **CONFLICT**.
+5. Try a few posts from different authors. If no check appears, refresh the opened
+   post once. Close the browser or press **Ctrl+C** to finish.
+
+The observer matches post metadata to a captured like by both media ID and post
+code. It compares an explicit `owner`/`user` ID with the liked-item ID suffix.
+A match validates that observed item only. Conflicting metadata remains unverified.
+It does not verify following status, the signed-in account identity, or all history.
+No Authors filter is required: the desktop layout tested only offers sorting and dates.
+
+The script opens Instagram and passively observes recognized Likes reads and supported post-detail
+responses while a post is open.
+It does not click buttons, submit credentials, replay requests, or save HARs.
+Your manual browser actions still work normally; avoid deleting anything during
+this experiment. If login is challenged, complete Instagram's normal flow or stop.
+
+The dedicated session lives in the ignored `.browser-profile/` directory, so you
+usually do not need to log in again. Browser storage can contain private data;
+never commit that directory. The terminal summary contains counts rather than
+raw responses, cookies, usernames, or media IDs. No summary file is written.
+
+If no batches appear, reopen Likes or refresh that page. If no author check appears,
+Instagram may have reused cached metadata, the page URL may not identify the post,
+or the response may use an unsupported format. Refresh the opened post once; do
+not interpret silence as a match. Metadata is kept in memory until you stop.
+The observer also checks embedded JSON in post documents and API responses that
+arrive before the address bar changes. If a post response remains unsupported,
+`Post diagnostic` lines report structural counts only (no raw payload or IDs).
+Share those lines to help diagnose the missing format.
+It also handles Instagram navigation responses: each route's concrete shortcode
+is joined to that route's explicit media and owner IDs. This format was validated
+against one locally captured liked post; broader account coverage is untested.
+
+## Collect the Following list
+
+```sh
+python3 tools/observe_likes.py --channel chrome --collect-following
+```
+
+For automatic navigation with an existing saved login:
+
+```sh
+python3 tools/observe_likes.py --channel chrome --auto-open-following
+```
+
+To run without showing a browser window and exit automatically after saving:
+
+```sh
+python3 tools/observe_likes.py --channel chrome --auto-open-following --page-size 100 --headless
+```
+
+Close any earlier collector before starting, since they share the saved browser
+profile. Headless mode requires a saved login. If it expires or Instagram asks
+for verification, rerun without `--headless` to complete login.
+
+This reads the account ID from the saved Instagram session and requests that
+account's Following list directly. It does not depend on Profile buttons, language,
+or scrolling. If no session is available, it waits up to two minutes for you to
+log in, then starts automatically. Login challenges are not automated. Cookies
+are used locally and are not included in the export. The browser stays open afterward.
+All pages, including the first, use the requested page size in this mode.
+Remaining pages request 50 accounts by default; use `--page-size 100` to try larger
+pages. Instagram may return fewer. Pages load sequentially because each response
+provides the next cursor. Larger pages have not yet been verified against a live
+session. A profile-count mismatch remains incomplete even at the final page.
+
+Log in manually, open your own profile, and click **Following** once. Leave the
+browser open; no scrolling is needed. The collector requests remaining pages
+using the same browser session, with a pause between requests. It stops at the
+end, a failed/restricted page, repeated pagination, or three pages with no new
+accounts. It does not follow, unfollow, or remove anything.
+
+The result is saved automatically in `.local-data/following-<timestamp>.json`
+(ignored by Git). This reusable snapshot contains account IDs, usernames, list
+owner ID, collection time, and completeness diagnostics. Interrupted collections
+also save partial results. Keep incomplete snapshots out of “not following”
+filters. Without `--collect-following`, collection remains passive and in memory.
+
+An uninterrupted cursor chain must end with explicit `has_more: false`, no next
+cursor, no indicated restrictions/hidden accounts, and no parsing failures. If a
+profile count is available it must also match. Otherwise the list remains incomplete.
+The final-page format has been checked against the full Following capture.
+A terminal page alone does not resolve a mismatch with the observed profile count.
+
+Lists from different profiles are kept separate. List ownership is not yet verified
+against the authenticated session, and this step does not enable not-following
+filters. Restart the observer for a fresh snapshot if a page fails or changes.
+
+## Preview collected likes
+
+```sh
+python3 tools/observe_likes.py --channel chrome --preview
+```
+
+Load Likes and open a few posts to collect author evidence. Close the observer
+browser (or press Ctrl+C) to print a deduplicated preview with content type, author
+ID, evidence status, and a post link. Nothing is saved or removed. The preview
+contains private activity, so review it before sharing terminal output.
+
+`matched` means explicit owner metadata agrees with the suffix for that item;
+`inferred` means only the suffix is available. `mismatched` displays the explicit
+owner rather than the suffix. `conflicting` leaves the author unknown. This does
+not verify usernames, following status, or complete/current history.
+
+To filter a subsequent preview, use an author ID from the first preview:
+
+```sh
+python3 tools/observe_likes.py --channel chrome --author-id 123456
+```
+
+Replace `123456` with the desired ID. This filters the terminal preview, not
+Instagram's page. Inferred matches are included and labeled; conflicting identities
+are excluded. Each run collects fresh observations in memory.
 
 ## Inspect a capture
 
@@ -45,13 +240,17 @@ Following status and reliable author identification are not implemented.
 
 ## Next steps
 
-See [the implementation research](docs/implementation-research.md) for the project
-comparison, technical options, and recommended build order.
-
 1. Inspect the existing capture offline.
-2. Capture applying the Likes author filter for one account to understand author
-   identification. No additional unlikes are needed for that investigation.
-3. Build a visible-browser, read-only preview before adding cleanup actions.
+2. Open captured liked posts and validate their candidate author-ID mapping.
+3. Add verified author metadata and a read-only preview before cleanup actions.
+
+## Tests
+
+These use synthetic responses and do not require Playwright or an account:
+
+```sh
+python3 -m unittest discover -s tests -v
+```
 
 ## First commit
 
