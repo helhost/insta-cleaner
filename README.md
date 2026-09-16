@@ -40,19 +40,24 @@ removal actions are implemented. Development observers below remain available.
 python3 tools/probe_likes.py --pages 3
 ```
 
-Close other collectors first. Open **Your activity → Likes** in the launched
-browser; the probe then loads the remaining pages automatically, saves a partial
+Close other collectors first. The probe opens **Your activity → Likes** automatically
+using the saved session, loads the remaining pages, and saves a partial
 inventory in `.local-data/likes-probe-*.json`, and closes the browser. Keep filters
 unchanged and avoid removals during the run. The page limit is 1–5, default 3.
 
 To check explicit authors for a small sample after pagination:
 
 ```sh
-python3 tools/probe_likes.py --pages 3 --authors 3
+python3 tools/probe_likes.py --pages 3 --authors 3 --headless
 ```
 
-This opens three collected posts automatically and retains inferred evidence when
-explicit matching metadata is unavailable. It does not remove anything.
+This runs without a window and opens three collected posts automatically. Author
+checks stop waiting as soon as explicit metadata for the exact item arrives; otherwise
+they wait up to eight seconds after navigation and document inspection. Navigation
+has its own 30-second timeout. Unresolved authors retain their existing evidence.
+Run `python3 instagram.py login` if the saved session needs renewing. For visible
+troubleshooting, omit `--headless`; add `--manual` to navigate to Likes yourself.
+`--manual` and `--headless` cannot be combined. It does not remove anything.
 
 The probe uses live request credentials held in memory, never credentials from
 HAR files. It parses only the observed `liked_next` instruction and never executes

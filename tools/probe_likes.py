@@ -1,4 +1,4 @@
-"""Limited read-only Likes pagination experiment; start by opening Likes manually."""
+"""Limited read-only Likes pagination experiment; automatically open Likes using the saved session."""
 import argparse
 import asyncio
 from datetime import datetime, timezone
@@ -11,6 +11,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from inspect_har import response_records, strings
 from observe_likes import activity_action, PROFILE, close_context
 from author_check import AuthorTracker, inspect_metadata, metadata_endpoint
+from insta_cleaner.following import LoginRequired, session_identity
 
 STRING = r'"(?:\\.|[^"\\])*"'
 NEXT = re.compile(
@@ -44,17 +45,25 @@ def envelope_error(body):
     return None
 
 
-async def check_authors(context, tracker, limit):
+async def check_authors(context, tracker, limit, timeout=8):
     """Open a bounded sample normally; join only exact media-ID/code pairs."""
     page = await context.new_page()
     pending = set()
     accepted = set()
+    active_key = None
+    author_ready = asyncio.Event()
+
+    def add_rows(rows):
+        matched = [row for row in rows if (row[0], row[1]) in accepted]
+        tracker.add_details(matched)
+        if any((row[0], row[1]) == active_key for row in matched):
+            author_ready.set()
 
     async def inspect(response):
         try:
             if response.status == 200:
                 rows, _ = inspect_metadata(await response.text())
-                tracker.add_details([row for row in rows if (row[0], row[1]) in accepted])
+                add_rows(rows)
         except Exception:
             pass  # An unreadable ancillary response cannot establish author evidence.
 
@@ -69,15 +78,17 @@ async def check_authors(context, tracker, limit):
         for item in tracker.preview()[:limit]:
             key = (item['media_id'], item['code'])
             accepted.add(key)
+            active_key = key
+            author_ready.clear()
             try:
                 await page.goto(f"https://www.instagram.com/p/{item['code']}/", wait_until='domcontentloaded', timeout=30000)
                 rows, _ = inspect_metadata(await page.content())
-                tracker.add_details([row for row in rows if (row[0], row[1]) == key])
-                # Allow asynchronously loaded route metadata to arrive, without
-                # requiring network-idle on Instagram's continually active page.
-                await asyncio.sleep(3)
-                if pending:
-                    await asyncio.wait(list(pending), timeout=5)
+                add_rows([row for row in rows if (row[0], row[1]) == key])
+                if not author_ready.is_set():
+                    try:
+                        await asyncio.wait_for(author_ready.wait(), timeout=timeout)
+                    except asyncio.TimeoutError:
+                        pass  # Keep inferred/unknown evidence when metadata never arrives.
                 state = next(row['evidence'] for row in tracker.preview()
                              if (row['media_id'], row['code']) == key)
                 print(f"  Author sample #{item['index']}: {state}.", flush=True)
@@ -91,6 +102,20 @@ async def check_authors(context, tracker, limit):
         await page.close()
 
 
+async def open_likes(context, page, ready, *, manual=False, headless=False):
+    if headless:
+        await session_identity(context)
+    if manual:
+        print('Open Your activity → Likes. Collection starts automatically.', flush=True)
+    else:
+        print('Opening Likes automatically using the saved session.', flush=True)
+    target = 'https://www.instagram.com/' if manual else 'https://www.instagram.com/your_activity/interactions/likes/'
+    await page.goto(target, wait_until='domcontentloaded', timeout=30000)
+    if '/accounts/login' in page.url or '/challenge/' in page.url:
+        raise LoginRequired('Login or verification required. Run: python3 instagram.py login')
+    return await asyncio.wait_for(ready, timeout=180 if manual else 45)
+
+
 async def probe(args):
     from playwright.async_api import async_playwright
     tracker = AuthorTracker()
@@ -99,7 +124,7 @@ async def probe(args):
     stage = 'initialization'
     async with async_playwright() as playwright:
         context = await playwright.chromium.launch_persistent_context(str(PROFILE), channel=args.channel,
-            headless=False, chromium_sandbox=True, accept_downloads=False)
+            headless=args.headless, chromium_sandbox=True, accept_downloads=False)
         ready = asyncio.get_running_loop().create_future()
 
         def observed(response):
@@ -109,10 +134,8 @@ async def probe(args):
         context.on('response', observed)
         try:
             page = context.pages[0] if context.pages else await context.new_page()
-            print('Open Your activity → Likes in this browser. The probe then loads up to '
-                  f'{args.pages} pages automatically. Do not change filters or remove items during the run.', flush=True)
-            await page.goto('https://www.instagram.com/', wait_until='domcontentloaded')
-            seed = await asyncio.wait_for(ready, timeout=180)
+            stage = 'open Likes'
+            seed = await open_likes(context, page, ready, manual=args.manual, headless=args.headless)
             if seed.status != 200:
                 raise ValueError(f'Initial Likes request returned HTTP {seed.status}')
             body = await seed.text()
@@ -177,11 +200,13 @@ async def probe(args):
                 stage = 'check authors'
                 print('Checking a small author sample by opening collected posts…', flush=True)
                 await check_authors(context, tracker, args.authors)
+        except LoginRequired as error:
+            reason = str(error)
         except (ValueError, KeyError):
             # Errors here use fixed local descriptions; never print request data.
             reason = 'unsupported response or pagination format'
         except asyncio.TimeoutError:
-            reason = 'timed out waiting for Likes'
+            reason = 'timed out waiting for Likes; try --manual without --headless to inspect the browser'
         except Exception as error:
             category = type(error).__name__
             frames = traceback.extract_tb(error.__traceback__)
@@ -207,7 +232,11 @@ def main():
     parser.add_argument('--channel', choices=['chrome'], default='chrome')
     parser.add_argument('--pages', type=int, default=3)
     parser.add_argument('--authors', type=int, default=0, help='Automatically open up to five collected posts to check explicit authors')
+    parser.add_argument('--headless', action='store_true', help='Use the saved login without showing a browser window')
+    parser.add_argument('--manual', action='store_true', help='Open Likes manually for troubleshooting')
     args = parser.parse_args()
+    if args.headless and args.manual:
+        parser.error('--manual cannot be used with --headless')
     if not 0 <= args.authors <= 5:
         parser.error('--authors must be between 0 and 5')
     if not 1 <= args.pages <= 5:
