@@ -30,9 +30,40 @@ account mismatches remain unknown; incomplete lists cannot establish absence.
 Identity is scoped using the session cookie, not independent server verification.
 Snapshots use schema version 2; the older development exports remain unchanged.
 
-The CLI currently supports login and Following collection. Likes collection and
-the filter helper are not yet connected into an end-to-end CLI preview, and no
-removal actions are implemented. Development observers below remain available.
+## Read-only Likes preview
+
+```sh
+python3 instagram.py preview --pages 1 --content reels --relationship not-followed
+```
+
+This runs headlessly with your saved session: it collects a bounded Likes inventory,
+checks explicit authors for every item matching the content filter, and collects
+Following when a relationship filter is requested. It prints selected post links
+and saves a private `.local-data/likes-preview-*.json` report. Nothing is removed.
+Start with one page; author checks navigate to each matching post and can take time.
+
+- `--pages`: maximum Likes pages, 1–20; default 3. Every preview remains labelled
+  partial because full-history termination is not yet verified.
+- `--content`: `all`, `reels`, or `posts` (including carousels); default `all`.
+- `--relationship`: `all`, `followed`, `not-followed`, or `unknown`; default `all`.
+  `all` skips Following collection.
+
+Unknown or inferred authors are never counted as not-followed. An incomplete
+Following list also makes absent authors unknown. Reports include separate
+`selected` and `unknown` lists; these overlap when explicitly previewing unknown
+items or selecting all relationships. Content outside the chosen filter is omitted.
+The report records the session account ID, filter settings, and collection status.
+Author usernames are included when available from Following, so an unfollowed
+post may show only its author's numeric ID.
+
+```sh
+python3 instagram.py preview --pages 1 --content posts --relationship followed
+python3 instagram.py preview --pages 1 --content reels --relationship unknown
+```
+
+The reusable implementation is in `insta_cleaner/likes.py`, `media.py`, and
+`preview.py`. Development commands remain available below. Full-history
+collection and all removal actions remain unimplemented.
 
 ## Development: limited Likes pagination probe
 
@@ -64,7 +95,7 @@ HAR files. It parses only the observed `liked_next` instruction and never execut
 server UI expressions. Saved rows contain media IDs, post codes, product types,
 and author evidence. Suffix-only authors remain inferred. Missing continuation
 instructions are not treated as proof that the full history is complete. Explicit
-author lookup and full-history collection are later experiments.
+author lookup is available through `--authors`; full-history collection remains a later experiment.
 
 ## Observe Likes in a browser
 
@@ -241,7 +272,7 @@ client. It never evaluates Bloks expressions. Format changes may cause records
 to be missed. A successful HTTP response is not proof that an unlike succeeded.
 Items listed across a capture may include items subsequently unliked; this is
 an inventory of captured records, not your current Likes list or complete history.
-Following status and reliable author identification are not implemented.
+The application preview can classify explicitly resolved authors using Following. Unresolved authors remain unknown; removal actions are not implemented.
 
 ## Next steps
 
