@@ -63,7 +63,23 @@ python3 instagram.py preview --pages 1 --content reels --relationship unknown
 
 The reusable implementation is in `insta_cleaner/likes.py`, `media.py`, and
 `preview.py`. Development commands remain available below. Full-history
-collection and all removal actions remain unimplemented.
+collection and batch removal remain unimplemented. A separate single-reel unlike
+experiment is described below.
+
+## Development single item unlike test
+
+`tools/unlike_one.py --preview PATH --code POST_CODE` checks one selected reel
+without changing anything. Add `--execute` only to unlike that specific item.
+The tool requires a saved preview containing a reel with an explicit author
+classified as not-followed. It refreshes Following and author evidence, checks
+the session account and visible liked state, then clicks the post's Unlike action
+once and reloads to verify that the post now displays Like.
+
+There are no automatic mutation retries. If a click may have been delivered but
+verification fails, inspect that item manually before doing anything else. Private
+test records under `.local-data/unlike-test-*.json` record intent and the final
+result. Already-unliked or ambiguous items stop without a click. This experiment
+supports one reel at a time; batch cleanup is not implemented.
 
 ## Development: limited Likes pagination probe
 
