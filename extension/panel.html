@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Insta Cleaner</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <span class="brand-icon" aria-hidden="true">✦</span><span>insta cleaner</span
+        ><span class="local-badge"><i></i> On your device</span>
+      </div>
+      <h1>A little less.<br /><span>A little lighter.</span></h1>
+      <p>Make room for what you like now.</p>
+    </header>
+    <main>
+      <section class="filter-card" aria-labelledby="filter-title">
+        <div class="section-heading">
+          <h2 id="filter-title">Make it yours</h2>
+          <span class="step">01 / SELECT</span>
+        </div>
+        <label id="content-label">What would you like to clear?</label>
+        <div class="segments" role="group" aria-labelledby="content-label">
+          <button type="button" data-content="all" aria-pressed="true">Everything</button
+          ><button type="button" data-content="reels" aria-pressed="false">Reels</button
+          ><button type="button" data-content="posts" aria-pressed="false">Posts</button>
+        </div>
+        <select id="content" hidden aria-label="Content">
+          <option value="all">Reels and posts</option>
+          <option value="reels">Reels</option>
+          <option value="posts">Posts and carousels</option>
+        </select>
+        <p class="field-hint">Posts includes carousels.</p>
+        <label for="relationship">Whose content?</label>
+        <div class="select-wrap">
+          <select id="relationship">
+            <option value="all">Everyone</option>
+            <option value="followed">People I follow</option>
+            <option value="not-followed">People I don’t follow</option>
+          </select>
+        </div>
+        <div class="date-heading">
+          <label for="open-dates">When did you like it?</label
+          ><button id="clear-dates" class="text-button" type="button">Reset</button>
+        </div>
+        <input id="startDate" type="hidden" /><input id="endDate" type="hidden" />
+        <button id="open-dates" class="date-trigger" type="button">
+          <span class="calendar-icon" aria-hidden="true">▦</span
+          ><span id="date-label">Any time</span><span aria-hidden="true">↗</span>
+        </button>
+        <div class="presets" aria-label="Quick date ranges">
+          <button data-days="7">Past week</button><button data-days="30">Past month</button
+          ><button data-days="365">Past year</button>
+        </div>
+        <button id="scan" class="primary">Find my likes <span aria-hidden="true">↗</span></button>
+        <p class="assurance">Nothing is removed until you confirm.</p>
+      </section>
+      <section id="activity" class="activity-card" aria-labelledby="count">
+        <div class="section-heading">
+          <span id="phase" class="eyebrow">YOUR FRESH START</span
+          ><span id="activity-icon" aria-hidden="true">✧</span>
+        </div>
+        <strong id="count">Ready when you are</strong>
+        <p id="status" role="status" aria-live="polite">Choose your filters to find your likes.</p>
+        <div id="progress-area" hidden>
+          <div class="progress-meta">
+            <span id="progress-label">Finding your likes</span><span id="percent"></span>
+          </div>
+          <div
+            id="progress"
+            class="progress-track"
+            role="progressbar"
+            aria-label="Scan progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          >
+            <div id="progress-fill"></div>
+          </div>
+          <p id="time-hint"></p>
+        </div>
+        <p id="scope" class="scope"></p>
+        <button id="stop" class="secondary" hidden>Stop search</button
+        ><button id="review" class="primary remove" hidden disabled>Remove likes</button>
+      </section>
+      <footer>
+        <span class="privacy-dot"></span> Your account. Your choice.<span
+          id="account"
+          class="account"
+        ></span>
+      </footer>
+    </main>
+    <dialog id="confirm" aria-labelledby="confirm-title">
+      <span class="dialog-symbol" aria-hidden="true">♡</span>
+      <h2 id="confirm-title">A little lighter?</h2>
+      <p id="confirm-text"></p>
+      <p class="dialog-note">Your posts stay right where they are. Only your likes are removed.</p>
+      <button id="execute" class="primary remove">Remove likes</button
+      ><button id="cancel" class="secondary">Keep them for now</button>
+    </dialog>
+    <dialog id="date-picker" aria-labelledby="date-title">
+      <div class="section-heading">
+        <h2 id="date-title">Choose your dates</h2>
+        <button id="date-close" class="icon-button" aria-label="Close date picker">×</button>
+      </div>
+      <div class="date-tabs">
+        <button id="pick-start" type="button">
+          From <strong id="draft-start">Any time</strong></button
+        ><button id="pick-end" type="button">To <strong id="draft-end">Any time</strong></button>
+      </div>
+      <div class="calendar-nav">
+        <button id="prev-month" class="icon-button" aria-label="Previous month">‹</button
+        ><select id="calendar-month" aria-label="Month"></select
+        ><select id="calendar-year" aria-label="Year"></select
+        ><button id="next-month" class="icon-button" aria-label="Next month">›</button>
+      </div>
+      <div class="weekdays" aria-hidden="true">
+        <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span
+        ><span>S</span>
+      </div>
+      <div id="calendar-grid" class="calendar-grid" aria-label="Calendar dates"></div>
+      <p id="date-error" role="alert"></p>
+      <button id="apply-dates" class="primary">Use these dates</button
+      ><button id="any-dates" class="text-button">Choose any time</button>
+    </dialog>
+    <script src="following.js"></script>
+    <script src="dates.js"></script>
+    <script src="workflow.js"></script>
+    <script src="calendar.js"></script>
+    <script src="panel.js"></script>
+  </body>
+</html>

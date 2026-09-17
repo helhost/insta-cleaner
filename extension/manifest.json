@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Insta Cleaner",
+  "version": "0.4.0",
+  "description": "Filter your Instagram likes by content, author relationship, and dates, then confirm their removal.",
+  "minimum_chrome_version": "116",
+  "incognito": "not_allowed",
+  "permissions": ["sidePanel", "storage", "cookies", "activeTab", "scripting"],
+  "host_permissions": ["https://www.instagram.com/*"],
+  "action": {
+    "default_title": "Open Insta Cleaner"
+  },
+  "side_panel": {
+    "default_path": "panel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.instagram.com/your_activity/interactions/likes/*"],
+      "js": ["parser.js", "dates.js", "queue.js", "page-hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.instagram.com/your_activity/interactions/likes/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
