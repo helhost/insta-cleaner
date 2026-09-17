@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 128 128" fill="none">
+  <title>Insta Cleaner</title>
+  <defs>
+    <radialGradient id="f" cx="158.429" cy="578.088" r="52.3515" xlink:href="#a" gradientUnits="userSpaceOnUse" gradientTransform="matrix(0 -4.03418 4.28018 0 -2332.2273 942.2356)" fx="158.429" fy="578.088" />
+    <radialGradient xlink:href="#b" id="g" gradientUnits="userSpaceOnUse" gradientTransform="matrix(.67441 -1.16203 1.51283 .87801 -814.3657 -47.8354)" cx="172.6149" cy="600.6924" fx="172.6149" fy="600.6924" r="65" />
+    <radialGradient xlink:href="#c" id="h" cx="144.012" cy="51.3367" fx="144.012" fy="51.3367" r="67.081" gradientTransform="matrix(-2.3989 .67549 -.23008 -.81732 464.9957 -26.4035)" gradientUnits="userSpaceOnUse" />
+    <radialGradient xlink:href="#d" id="e" gradientUnits="userSpaceOnUse" gradientTransform="matrix(-3.10797 .87652 -.6315 -2.23914 1345.6503 1374.1983)" cx="199.7884" cy="628.4379" fx="199.7884" fy="628.4379" r="52.3515" />
+    <linearGradient id="d">
+      <stop offset="0" stop-color="#ff005f" />
+      <stop offset="1" stop-color="#fc01d8" />
+    </linearGradient>
+    <linearGradient id="c">
+      <stop offset="0" stop-color="#780cff" />
+      <stop stop-color="#820bff" offset="1" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="b">
+      <stop offset="0" stop-color="#fc0" />
+      <stop offset="1" stop-color="#fc0" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="a">
+      <stop offset="0" stop-color="#fc0" />
+      <stop offset=".1242" stop-color="#fc0" />
+      <stop offset=".5672" stop-color="#fe4a05" />
+      <stop offset=".6942" stop-color="#ff0f3f" />
+      <stop offset="1" stop-color="#fe0657" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(4 4) scale(0.453543364) translate(-71.8155 -18.1429)">
+    <rect x="71.8155" y="18.1429" width="264.5833" height="264.5833" rx="66.145825" fill="url(#e)" />
+    <rect x="71.8155" y="18.1429" width="264.5833" height="264.5833" rx="66.145825" fill="url(#f)" />
+    <rect x="71.8155" y="18.1429" width="264.5833" height="264.5833" rx="66.145825" fill="url(#g)" />
+    <rect x="71.8155" y="18.1429" width="264.5833" height="264.5833" rx="66.145825" fill="url(#h)" />
+  </g>
+  <path d="M64 25C69 48 80 59 103 64C80 69 69 80 64 103C59 80 48 69 25 64C48 59 59 48 64 25Z" fill="#FFFFFF" />
+</svg>

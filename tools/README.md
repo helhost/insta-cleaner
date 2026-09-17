@@ -37,3 +37,16 @@ python tools/probe_months.py --start 2014-08-01 --headless
 Use `--help` on executable tools for available options. These probes return observed inventories, which may be partial. The Python author-check experiments deliberately perform additional verification; they are separate from the extension’s faster inferred-author filtering.
 
 Keep HAR files under `captures/`. Never commit captures, saved sessions, or account-specific output.
+
+## Extension icon
+
+The editable source is `extension/icons/icon.svg`. After changing it, regenerate the committed Chrome PNG sizes with:
+
+```sh
+python -m playwright install chromium
+python tools/render_icons.py
+```
+
+The renderer uses only the local SVG and blocks network requests.
+
+The icon gradient uses the stops and radial transforms from the [Instagram 2022 SVG reference](https://commons.wikimedia.org/wiki/File:Instagram_logo_2022.svg), applied to our own rounded square and sparkle. Its layers include `#FF005F`, `#FC01D8`, `#FFCC00`, `#FE4A05`, `#FF0F3F`, `#FE0657`, `#780CFF`, and `#820BFF`, with white foreground artwork.
