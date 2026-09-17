@@ -12,7 +12,6 @@ import sys
 from urllib.parse import parse_qsl, urlsplit
 
 
-from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from insta_cleaner.media import PREFIX, ACTIONS, MEDIA, strings, response_records
 
@@ -34,9 +33,9 @@ def inspect(entries, summary_only=False):
         if url.path != "/async/wbloks/fetch/":
             continue
         app = dict(parse_qsl(url.query)).get("appid", "")
-        if not app.startswith(PREFIX) or app[len(PREFIX):] not in ACTIONS:
+        if not app.startswith(PREFIX) or app[len(PREFIX) :] not in ACTIONS:
             continue
-        action = app[len(PREFIX):]
+        action = app[len(PREFIX) :]
         matched += 1
         try:
             records, warning = response_records(entry)
@@ -55,7 +54,9 @@ def inspect(entries, summary_only=False):
     for product, count in sorted(counts.items()):
         print(f"  {product}: {count}")
     if not summary_only and all_records:
-        print("\nMEDIA ID                                 POST CODE      PRODUCT              TYPE")
+        print(
+            "\nMEDIA ID                                 POST CODE      PRODUCT              TYPE"
+        )
         for media_id, (code, product, media_type) in all_records.items():
             print(f"{media_id:<40} {code:<14} {product:<20} {media_type}")
     print("\nCaptured inventory only; not a current or complete account history.")
@@ -67,15 +68,22 @@ def inspect(entries, summary_only=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("capture", type=Path, help="Local .har file to inspect")
-    parser.add_argument("--summary-only", action="store_true", help="Omit item identifiers")
+    parser.add_argument(
+        "--summary-only", action="store_true", help="Omit item identifiers"
+    )
     args = parser.parse_args()
     try:
         document = json.loads(args.capture.read_text(encoding="utf-8-sig"))
         entries = document["log"]["entries"]
-        if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
+        if not isinstance(entries, list) or not all(
+            isinstance(e, dict) for e in entries
+        ):
             raise ValueError("Invalid HAR entries")
     except (OSError, ValueError, KeyError, TypeError):
-        print("Could not read a valid HAR file. Check the path and export format.", file=sys.stderr)
+        print(
+            "Could not read a valid HAR file. Check the path and export format.",
+            file=sys.stderr,
+        )
         return 2
     return inspect(entries, args.summary_only)
 

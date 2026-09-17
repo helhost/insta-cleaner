@@ -20,10 +20,21 @@ def post_code(url):
 def metadata_endpoint(url):
     try:
         parts = urlsplit(url)
-        return parts.scheme == "https" and parts.hostname in {"instagram.com", "www.instagram.com"} and (
-            parts.path in {"/api/graphql", "/graphql/query", "/graphql/query/",
-                           "/ajax/route-definition/", "/ajax/navigation/", "/ajax/bulk-route-definitions/"}
-            or re.fullmatch(r"/api/v1/media/[0-9_]+/info/", parts.path) is not None
+        return (
+            parts.scheme == "https"
+            and parts.hostname in {"instagram.com", "www.instagram.com"}
+            and (
+                parts.path
+                in {
+                    "/api/graphql",
+                    "/graphql/query",
+                    "/graphql/query/",
+                    "/ajax/route-definition/",
+                    "/ajax/navigation/",
+                    "/ajax/bulk-route-definitions/",
+                }
+                or re.fullmatch(r"/api/v1/media/[0-9_]+/info/", parts.path) is not None
+            )
         )
     except ValueError:
         return False
@@ -38,6 +49,7 @@ def numeric(value):
 
 class _JsonScripts(HTMLParser):
     """Read inert JSON scripts from a post document, never execute page code."""
+
     def __init__(self):
         super().__init__()
         self.active = False
@@ -46,7 +58,10 @@ class _JsonScripts(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         if tag == "script":
-            self.active = dict(attrs).get("type", "").lower() in {"application/json", "application/ld+json"}
+            self.active = dict(attrs).get("type", "").lower() in {
+                "application/json",
+                "application/ld+json",
+            }
             self.parts = []
 
     def handle_data(self, text):
@@ -83,8 +98,14 @@ def inspect_metadata(body, expected_code=None):
     """Read explicit owner/user IDs from media nodes, never from display text."""
     found = []
     docs = documents(body)
-    diagnostic = {"json_documents": len(docs), "media_nodes": 0, "with_author": 0,
-                  "with_media_id": 0, "code_matches": 0, "error_nodes": 0}
+    diagnostic = {
+        "json_documents": len(docs),
+        "media_nodes": 0,
+        "with_author": 0,
+        "with_media_id": 0,
+        "code_matches": 0,
+        "error_nodes": 0,
+    }
     stack = list(docs)
     while stack:
         node = stack.pop()
@@ -101,26 +122,36 @@ def inspect_metadata(body, expected_code=None):
             if isinstance(infos, list) and isinstance(exports, dict):
                 codes = set()
                 for info in infos:
-                    params = info.get("instanceParams", {}) if isinstance(info, dict) else {}
-                    value = params.get("shortcode") if isinstance(params, dict) else None
-                    if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_-]+", value):
+                    params = (
+                        info.get("instanceParams", {}) if isinstance(info, dict) else {}
+                    )
+                    value = (
+                        params.get("shortcode") if isinstance(params, dict) else None
+                    )
+                    if isinstance(value, str) and re.fullmatch(
+                        r"[A-Za-z0-9_-]+", value
+                    ):
                         codes.add(value)
                 if len(codes) == 1:
                     route_code = next(iter(codes))
                     for view in ("rootView", "hostableView"):
                         export = exports.get(view, {})
-                        props = export.get("props", {}) if isinstance(export, dict) else {}
+                        props = (
+                            export.get("props", {}) if isinstance(export, dict) else {}
+                        )
                         if not isinstance(props, dict):
                             continue
                         pk = numeric(props.get("media_id"))
                         owner = numeric(props.get("media_owner_id"))
                         if pk and owner:
                             # Reuse the ordinary node validation and diagnostics.
-                            stack.append({"pk": pk, "code": route_code, "owner": {"id": owner}})
+                            stack.append(
+                                {"pk": pk, "code": route_code, "owner": {"id": owner}}
+                            )
             for value in node.values():
                 if isinstance(value, (dict, list)):
                     stack.append(value)
-                elif isinstance(value, str) and value.startswith(('{', '[')):
+                elif isinstance(value, str) and value.startswith(("{", "[")):
                     try:
                         stack.append(json.loads(value))
                     except ValueError:
@@ -129,7 +160,9 @@ def inspect_metadata(body, expected_code=None):
             if not isinstance(code, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", code):
                 continue
             diagnostic["media_nodes"] += 1
-            media_pk = numeric(str(node.get("pk") or node.get("id") or "").split("_", 1)[0])
+            media_pk = numeric(
+                str(node.get("pk") or node.get("id") or "").split("_", 1)[0]
+            )
             authors = set()
             for field in ("owner", "user"):
                 user = node.get(field)
@@ -163,7 +196,9 @@ class AuthorTracker:
         for composite, (code, *_rest) in records.items():
             pk, suffix = composite.split("_", 1)
             self.likes.setdefault((pk, code), set()).add(suffix)
-            self.products.setdefault((pk, code), set()).add(_rest[0] if _rest else "unknown")
+            self.products.setdefault((pk, code), set()).add(
+                _rest[0] if _rest else "unknown"
+            )
         return self.results()
 
     def add_details(self, rows):
@@ -195,11 +230,23 @@ class AuthorTracker:
             if len(candidates) != 1 or len(authors) > 1:
                 state = "conflicting"
             identity = authors or candidates
-            author = next(iter(identity)) if len(identity) == 1 and state != "conflicting" else None
+            author = (
+                next(iter(identity))
+                if len(identity) == 1 and state != "conflicting"
+                else None
+            )
             if author_id is not None and author != author_id:
                 continue
             products = self.products.get(key, {"unknown"})
             product = next(iter(products)) if len(products) == 1 else "unknown"
-            rows.append({"index": index, "media_id": key[0], "code": key[1],
-                         "product": product, "author_id": author, "evidence": state})
+            rows.append(
+                {
+                    "index": index,
+                    "media_id": key[0],
+                    "code": key[1],
+                    "product": product,
+                    "author_id": author,
+                    "evidence": state,
+                }
+            )
         return rows

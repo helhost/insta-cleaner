@@ -1,2 +1,2 @@
-# Only needed for the live browser observer; the HAR reader uses the stdlib.
+# Python CLI and development probes only; the extension needs no Python runtime.
 playwright>=1.50,<2

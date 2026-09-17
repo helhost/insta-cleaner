@@ -1,4 +1,5 @@
 """Parse observed Likes media tuples without executing UI expressions."""
+
 import base64
 import json
 import re
@@ -10,7 +11,7 @@ ACTIONS = {"liked_media_screen", "liked_next", "liked_refresh", "liked_unlike"}
 MEDIA = re.compile(
     r'\(bk\.action\.array\.Make,\s*"(\d+_\d+)",\s*'
     r'"([A-Za-z0-9_-]+)",\s*"([a-z_]+)",\s*'
-    r'\(bk\.action\.i32\.Const,\s*(\d+)\)'
+    r"\(bk\.action\.i32\.Const,\s*(\d+)\)"
 )
 
 
@@ -35,7 +36,7 @@ def response_records(entry):
         body = base64.b64decode(body, validate=True).decode("utf-8")
     body = body.strip()
     if body.startswith("for (;;);"):
-        body = body[len("for (;;);"):]
+        body = body[len("for (;;);") :]
     document = json.loads(body)
     payload = document["payload"]["layout"]["bloks_payload"]
     records = {}
@@ -43,4 +44,3 @@ def response_records(entry):
         for media_id, code, product, media_type in MEDIA.findall(expression):
             records[media_id] = (code, product, media_type)
     return records, None if records else "no supported media records found"
-
