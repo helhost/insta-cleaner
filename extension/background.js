@@ -183,6 +183,9 @@ async function executeRemoval(id, token) {
       const replies = await invoke(true),
         result = replies?.[0]?.result;
       s = await ensure(id, token);
+      // Keep only structured diagnostics, never raw responses or session details.
+      await put(id, { ...s, batchDiagnostic: result || { status: 'no-result' } });
+      s = await ensure(id, token);
       if (result?.sent === false) {
         await put(id, { ...s, clickPending: false, current: null });
         throw Error('Batch not sent');
@@ -244,6 +247,19 @@ async function handleUnsafe(message, sender) {
       });
       return { stop: true };
     }
+    if (message.resolvedRange) {
+      if (s.pages || s.rangeCount || s.filters.startDate || s.filters.endDate || s.resolvedRange)
+        throw Error('Unexpected automatic date range');
+      const range = InstaCleanerDates.options(message.resolvedRange);
+      if (!range.startDate || !range.endDate) throw Error('Missing automatic date range');
+      const plan = InstaCleanerQueue.plan(range);
+      await put(id, {
+        ...s,
+        resolvedRange: range,
+        rangeCount: plan.chunks.length > 1 ? plan.chunks.length : 0,
+      });
+      return { stop: false };
+    }
     if (message.progressOnly === true) {
       const p = message.queueProgress;
       if (
@@ -296,9 +312,7 @@ async function handleUnsafe(message, sender) {
         message.chunk >= s.rangeCount ||
         !Number.isInteger(message.chunkPage) ||
         message.chunkPage < 1 ||
-        message.chunkPage > 100 ||
-        message.page !== s.pages + 1 ||
-        message.page > 2000
+        message.page !== s.pages + 1
       )
         throw Error('Invalid range progress');
       const rows =
@@ -350,7 +364,7 @@ async function handleUnsafe(message, sender) {
       map = new Map(s.items.map((x) => [x.mediaId, x]));
     rows.forEach((x) => map.set(x.mediaId, x));
     const stalled = map.size === s.items.length,
-      finished = message.finished || stalled || message.page >= 100;
+      finished = message.finished || stalled;
     const requested = message.page > 1 && message.requestedPageSize === 100 ? 100 : null;
     const batch = requested ? ` Last batch: ${rows.length} items; requested ${requested}.` : '';
     await put(id, {
@@ -360,6 +374,7 @@ async function handleUnsafe(message, sender) {
       lastBatchSize: rows.length,
       requestedPageSize: requested,
       status: finished ? 'ready' : 'scanning',
+      scanIssue: message.incomplete === true || (stalled && !message.finished),
       message:
         (finished
           ? 'Scan stopped. These matches cover the collected items only.'

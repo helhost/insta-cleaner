@@ -15,6 +15,7 @@ window.addEventListener('message', async (event) => {
       items: d.items,
       page: d.page,
       progressOnly: d.progressOnly === true,
+      resolvedRange: d.resolvedRange,
       queue: d.queue === true,
       queueDone: d.queueDone === true,
       chunk: d.chunk,
@@ -23,6 +24,7 @@ window.addEventListener('message', async (event) => {
       emptyRange: d.emptyRange === true,
       requestedPageSize: d.requestedPageSize,
       finished: d.finished === true,
+      incomplete: d.incomplete === true,
       error: Boolean(d.error),
     });
     window.postMessage(

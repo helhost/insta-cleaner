@@ -345,3 +345,59 @@ test('period progress updates independently of item pages and never regresses', 
   await w.call({ type: 'STOP' }, panel);
   assert.equal((await progress(11)).stop, true);
 });
+
+test('all-time scanning continues beyond the old page cap until the final page', async () => {
+  const w = worker();
+  await scan(w);
+  for (let page = 1; page <= 105; page++) {
+    const result = await w.call(
+      {
+        type: 'CAPTURE',
+        scanToken: 'token1',
+        items: [{ ...item, mediaId: String(1000 + page) }],
+        page,
+        finished: page === 105,
+      },
+      sender,
+    );
+    assert.equal(result.stop, page === 105);
+  }
+  assert.equal(w.values['scan:1'].items.length, 105);
+  assert.equal(w.values['scan:1'].status, 'ready');
+  assert.equal(w.values['scan:1'].scanIssue, false);
+});
+test('all-time date discovery initializes progress without changing user filters', async () => {
+  const w = worker();
+  await scan(w);
+  await w.call(
+    {
+      type: 'CAPTURE',
+      scanToken: 'token1',
+      resolvedRange: { startDate: '2020-01-01', endDate: '2020-02-01' },
+    },
+    sender,
+  );
+  const s = w.values['scan:1'];
+  assert.equal(s.rangeCount, 5);
+  assert.equal(s.filters.startDate, '');
+  await w.call(
+    {
+      type: 'CAPTURE',
+      scanToken: 'token1',
+      progressOnly: true,
+      queueProgress: { completed: 1, total: 5, workers: 2 },
+    },
+    sender,
+  );
+  assert.equal(w.values['scan:1'].queueProgress.completed, 1);
+  await assert.rejects(
+    w.call(
+      {
+        type: 'CAPTURE',
+        scanToken: 'token1',
+        resolvedRange: { startDate: '2020-01-01', endDate: '2020-02-01' },
+      },
+      sender,
+    ),
+  );
+});

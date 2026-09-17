@@ -28,6 +28,46 @@
     const [y, m, d] = s.split('-').map(Number);
     return new Date(y, m - 1, d).getTime() / 1000;
   }
+  // Read the same fallback timestamps used by Instagram's own date pickers.
+  // Missing or ambiguous metadata leaves the all-time scan unbounded.
+  function defaultRange(body) {
+    try {
+      const data = JSON.parse(body.trim().replace(/^for \(;;\);/, ''));
+      const stack = [data?.payload?.layout?.bloks_payload];
+      const values = { start: new Set(), end: new Set() };
+      while (stack.length) {
+        const value = stack.pop();
+        if (!value || typeof value !== 'object') continue;
+        const picker = value['ig.component.DatePicker'];
+        if (picker) {
+          const key = /"dtl:ig_activity_center:ac_bottom_date_(start|end)"/.exec(
+            picker.on_date_picked || '',
+          )?.[1];
+          const matches = [
+            ...(picker.on_bind || '').matchAll(
+              /\(bk\.action\.core\.Pattern,\s*\(bk\.action\.i32\.Const,\s*1\),\s*\(bk\.action\.core\.FuncConst,\s*\(bk\.action\.i32\.Const,\s*(\d+)\)\)/g,
+            ),
+          ];
+          if (key && matches.length === 1) values[key].add(Number(matches[0][1]));
+        }
+        stack.push(...Object.values(value));
+      }
+      if (values.start.size !== 1 || values.end.size !== 1) return null;
+      const start = [...values.start][0],
+        end = [...values.end][0];
+      if (start < 0 || start > end || end > Date.now() / 1000 + 86400) return null;
+      const date = (seconds) => {
+        const d = new Date(seconds * 1000);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      };
+      // The range requests use midnight boundaries; include the entire final day.
+      const tomorrow = new Date(end * 1000);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return options({ startDate: date(start), endDate: date(tomorrow.getTime() / 1000) });
+    } catch {
+      return null;
+    }
+  }
   function refreshParams(body, next, settings) {
     const opt = options(settings),
       a = JSON.parse(next.activity_center_params);
@@ -72,6 +112,6 @@
       shared_user_id: '',
     };
   }
-  globalThis.InstaCleanerDates = { options, refreshParams };
+  globalThis.InstaCleanerDates = { options, refreshParams, defaultRange };
   if (typeof module !== 'undefined') module.exports = globalThis.InstaCleanerDates;
 })();

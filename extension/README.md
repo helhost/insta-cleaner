@@ -26,9 +26,9 @@ Load this directory directly in Chrome. There is no bundler, server, or runtime 
 
 ## Behavioral boundaries
 
-Each pagination chain is sequential because the next cursor comes from the preceding response. Independent date ranges can run concurrently; overlapping results are deduplicated by media ID. Page limits or unsupported responses produce partial results.
+Each pagination chain is sequential because the next cursor comes from the preceding response. Independent date ranges can run concurrently; overlapping results are deduplicated by media ID. Scanning continues until Instagram returns no continuation. Unsupported responses, repeated cursors, or cancellation produce partial results; there is no fixed page or total-item cap.
 
-Progress reflects completed date ranges, not elapsed time or a guaranteed time estimate. Open-ended scans use indeterminate progress.
+Progress reflects completed date ranges, not elapsed time or a guaranteed time estimate. All-time scans read the default start and end timestamps from Instagram’s date-picker metadata and schedule that range automatically, including the entire final day. If those defaults cannot be read reliably, collection falls back to sequential pagination with indeterminate progress.
 
 Author IDs are taken from the captured media ID suffix. The extension does not open each post to verify its author. Negative relationship matching requires a complete Following snapshot for the same account.
 

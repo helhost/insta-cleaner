@@ -86,9 +86,16 @@
     const seen = new Set();
     let page = 0;
     try {
-      const settings = InstaCleanerDates.options(
+      let settings = InstaCleanerDates.options(
         Object.fromEntries(new URLSearchParams(location.hash.slice(1))),
       );
+      if (!settings.startDate && !settings.endDate && status === 200) {
+        const range = InstaCleanerDates.defaultRange(body);
+        if (range && parser.continuation(body)) {
+          settings = { ...settings, ...range };
+          await deliver({ resolvedRange: range });
+        }
+      }
       const plan = InstaCleanerQueue.plan(settings);
       if (plan && plan.chunks.length > 1) {
         await collectQueue(body, status, url, form, headers, plan);
@@ -121,14 +128,11 @@
         const items = parser.parse(body),
           next = parser.continuation(body);
         page++;
-        let reason =
-          page >= 100
-            ? 'Scan limit reached.'
-            : !next
-              ? 'No supported next-page instruction.'
-              : seen.has(next.cursor)
-                ? 'Repeated pagination cursor.'
-                : '';
+        let reason = !next
+          ? 'No supported next-page instruction.'
+          : seen.has(next.cursor)
+            ? 'Repeated pagination cursor.'
+            : '';
         if (!form.has('params') && !reason) reason = 'Live pagination form unavailable.';
         if (!items.length && next) throw Error('Conflicting empty response.');
         await deliver({
@@ -137,6 +141,7 @@
           emptyRange: !items.length && !next,
           requestedPageSize: page > 1 ? Number(requestedPageSize) : null,
           finished: Boolean(reason),
+          incomplete: Boolean(reason && next),
           reason,
         });
         if (reason) return;
@@ -173,7 +178,6 @@
     const seed = parser.continuation(seedBody);
     if (!seed) throw Error('Date filter unavailable');
     let pages = 0,
-      requests = 0,
       completed = 0,
       workers = plan.workers;
     const ranges = new Map();
@@ -195,8 +199,6 @@
           ids = new Set();
         try {
           while (!stopped) {
-            if (count >= 100 || requests >= 2000) throw Error('Scan request limit reached');
-            requests++;
             count++;
             const target = new URL(url, location.origin);
             target.searchParams.set('appid', `com.instagram.privacy.activity_center.${action}`);

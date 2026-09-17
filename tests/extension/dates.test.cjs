@@ -45,3 +45,33 @@ test('missing and ambiguous refresh templates fail instead of silently using all
   });
   assert.throws(() => dates.refreshParams(ambiguous, next, {}));
 });
+function pickerRange(start, end) {
+  return JSON.stringify({
+    payload: {
+      layout: {
+        bloks_payload: {
+          tree: [
+            ...['start', 'end'].map((key, i) => ({
+              'ig.component.DatePicker': {
+                on_date_picked: `(bk.action.bloks.WriteGlobalConsistencyStore, "dtl:ig_activity_center:ac_bottom_date_${key}", (bk.action.core.GetArg, 0))`,
+                on_bind: `(bk.action.core.Pattern, (bk.action.i32.Const, 1), (bk.action.core.FuncConst, (bk.action.i32.Const, ${i ? end : start})))`,
+              },
+            })),
+          ],
+        },
+      },
+    },
+  });
+}
+test('automatic range reads picker defaults and includes the entire last day', () => {
+  const start = new Date(2020, 0, 1, 12).getTime() / 1000,
+    end = new Date(2020, 0, 31, 12).getTime() / 1000;
+  assert.deepEqual(dates.defaultRange(pickerRange(start, end)), {
+    startDate: '2020-01-01',
+    endDate: '2020-02-01',
+    order: 'newest_to_oldest',
+  });
+  assert.equal(dates.defaultRange(pickerRange(end, start)), null);
+  assert.equal(dates.defaultRange('{}'), null);
+  assert.equal(dates.defaultRange('invalid'), null);
+});

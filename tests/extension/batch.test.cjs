@@ -94,3 +94,12 @@ test('wrong account blocks request before sending', async () => {
   assert.equal((await s.send(true)).sent, false);
   assert.equal(s.requests.length, 0);
 });
+
+test('server errors retain the HTTP status and never retry the removal', async () => {
+  const s = setup({ status: 500 });
+  const result = await s.send(true);
+  assert.equal(result.status, 'unverified');
+  assert.equal(result.httpStatus, 500);
+  assert.equal(result.sent, true);
+  assert.equal(s.requests.length, 1);
+});

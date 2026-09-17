@@ -42,12 +42,12 @@
       accounts: {},
       pages: 0,
       complete: false,
-      reason: 'Page limit reached.',
+      reason: 'Following traversal has not finished.',
     };
     const seen = new Set();
     let cursor = '',
       stalled = 0;
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; ; i++) {
       if (i) await delay();
       await checkAccount();
       const query = new URLSearchParams({ count: '100' });

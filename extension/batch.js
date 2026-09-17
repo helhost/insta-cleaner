@@ -23,7 +23,6 @@
       if (
         !Array.isArray(items) ||
         !items.length ||
-        items.length > 50000 ||
         new Set(items.map((x) => x.mediaId)).size !== items.length
       )
         throw Error('Invalid batch');
@@ -55,7 +54,8 @@
         signal: AbortSignal.timeout(20000),
       });
       const text = await response.text();
-      if (response.status !== 200) return { status: 'unverified', sent: true };
+      if (response.status !== 200)
+        return { status: 'unverified', sent: true, httpStatus: response.status };
       const data = JSON.parse(text.trim().replace(/^for \(;;\);/, ''));
       if (data.error || data.errorSummary || !data.payload?.layout?.bloks_payload)
         return { status: 'unverified', sent: true };

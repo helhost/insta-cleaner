@@ -26,7 +26,7 @@ Requires Chrome 116 or newer. After updating the files, reload the extension and
 
 The extension communicates with Instagram using your signed-in browser session. There is no project backend or external analytics. Scan data stays in the browser; the optional Python tools save their data locally.
 
-This is an unofficial tool using Instagram’s web requests, which may change. A stopped or limited scan covers only the items collected. Author filters use author IDs inferred from Instagram’s media IDs; successful removal means Instagram acknowledged the request, not that every post was independently reloaded.
+This is an unofficial tool using Instagram’s web requests, which may change. All-time searches continue through the available pages without a fixed page cap. A stopped or interrupted scan covers only the items collected. Author filters use author IDs inferred from Instagram’s media IDs; successful removal means Instagram acknowledged the request, not that every post was independently reloaded.
 
 Currently supports **removing likes**. Comment and repost removal are not implemented.
 

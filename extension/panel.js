@@ -94,9 +94,14 @@ function render() {
       ? 'Cleanup stopped. Completed removals are saved.'
       : 'A little lighter. You’re all done.';
   else if (halted)
-    status = state.clickPending
-      ? 'We couldn’t confirm the removal. Check Instagram before trying again.'
-      : 'Cleanup was interrupted before the next request.';
+    status =
+      state.batchDiagnostic?.httpStatus >= 500
+        ? 'Instagram had a server error. Some likes may have been removed. Search again to check what remains before another cleanup.'
+        : state.batchDiagnostic?.httpStatus === 429
+          ? 'Instagram asked us to slow down. Wait before searching again to check what remains.'
+          : state.clickPending
+            ? 'We couldn’t confirm the removal. Check Instagram before trying again.'
+            : 'Cleanup was interrupted before the next request.';
   else if (ready)
     status = state.stopRequested
       ? 'Search stopped. Here’s what we found so far.'
