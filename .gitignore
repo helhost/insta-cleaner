@@ -16,3 +16,10 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# Development tooling
+node_modules/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/

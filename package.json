@@ -1,0 +1,17 @@
+{
+  "name": "insta-cleaner",
+  "version": "0.4.0",
+  "private": true,
+  "description": "Local Chrome extension for filtering and removing your Instagram likes.",
+  "scripts": {
+    "test": "node --test tests/extension/*.test.cjs",
+    "format": "prettier --write extension tests/extension/*.cjs tools/probe_months.js *.md tools/README.md package.json",
+    "format:check": "prettier --check extension tests/extension/*.cjs tools/probe_months.js *.md tools/README.md package.json"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

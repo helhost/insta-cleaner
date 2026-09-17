@@ -1,0 +1,7 @@
+node_modules/
+.venv/
+.browser-profile/
+.local-data/
+captures/
+docs/
+*.har
