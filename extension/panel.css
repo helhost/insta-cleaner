@@ -594,3 +594,76 @@ dialog p {
     transition: none !important;
   }
 }
+
+/* A single persistent action surface keeps removal within reach at any scroll position. */
+body.has-actions {
+  padding-bottom: calc(var(--action-height, 150px) + 24px);
+}
+html {
+  scroll-padding-bottom: calc(var(--action-height, 0px) + 24px);
+}
+.action-bar {
+  position: fixed;
+  z-index: 10;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px 20px max(16px, env(safe-area-inset-bottom));
+  background: linear-gradient(135deg, #232d2cf5, #191c29f5);
+  border-top: 1px solid #b4edd830;
+  box-shadow: 0 -12px 36px #080a124d;
+  backdrop-filter: blur(20px);
+  animation: appear 0.25s ease-out;
+}
+.action-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.action-spark {
+  color: var(--mint);
+  font-size: 26px;
+}
+.action-summary strong {
+  display: block;
+  font-size: 16px;
+  letter-spacing: -0.4px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+#action-hint {
+  display: block;
+  margin-top: 3px;
+  color: #a7beb6;
+  font-size: 10px;
+}
+.action-buttons button {
+  margin-top: 12px;
+  min-height: 42px;
+}
+.action-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  overflow: hidden;
+}
+.action-progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--mint));
+  transition: width 0.65s cubic-bezier(0.2, 0.65, 0.3, 1);
+}
+.action-progress.indeterminate > div {
+  width: 35%;
+  animation: travel 1.7s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .action-bar,
+  .action-progress > div {
+    animation: none;
+    transition: none;
+  }
+}

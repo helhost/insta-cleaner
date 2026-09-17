@@ -49,6 +49,20 @@ function render() {
   $('review').disabled = !ready || !rows.length || Boolean(changed) || pending;
   $('review').textContent =
     `Remove ${rows.length.toLocaleString()} ${rows.length === 1 ? 'like' : 'likes'}`;
+  const showActions = scanning || removing || !$('review').hidden;
+  $('action-bar').hidden = !showActions;
+  document.body.classList.toggle('has-actions', showActions);
+  $('action-count').textContent = removing
+    ? 'Making room…'
+    : `${rows.length.toLocaleString()} ${rows.length === 1 ? 'match' : 'matches'}`;
+  $('action-hint').textContent = scanning
+    ? 'Finding your likes…'
+    : removing
+      ? 'Removing confirmed likes'
+      : state?.scanIssue || state?.stopRequested
+        ? 'Partial search · confirm to remove'
+        : 'Ready when you are';
+  $('stop').disabled = pending;
   $('account').textContent = state?.accountId ? `Account ${state.accountId}` : '';
   $('phase').textContent = finished
     ? 'ALL DONE'
@@ -112,6 +126,12 @@ function render() {
     $('percent').textContent = '';
     $('progress').removeAttribute('aria-valuenow');
   }
+  $('action-progress').hidden = !scanning && !removing;
+  $('action-progress').classList.toggle('indeterminate', !determinate);
+  $('action-progress').firstElementChild.style.width = determinate
+    ? $('progress-fill').style.width
+    : '';
+  if (determinate) $('action-hint').textContent = `${$('percent').textContent} searched`;
   $('progress-label').textContent = removing ? 'Removing likes' : 'Searching your dates';
   const elapsed = state?.startedAt ? Math.floor((Date.now() - state.startedAt) / 1000) : 0;
   $('time-hint').textContent =
@@ -188,6 +208,13 @@ $('execute').addEventListener('click', () => {
 });
 window.addEventListener('focus', () => refresh().catch(() => {}));
 chrome.tabs.onActivated.addListener(() => refresh().catch(() => {}));
+// Reserve the dock's actual height, including wrapped text and browser zoom.
+new ResizeObserver(([entry]) => {
+  document.documentElement.style.setProperty(
+    '--action-height',
+    `${entry.target.getBoundingClientRect().height}px`,
+  );
+}).observe($('action-bar'));
 render();
 refresh().catch(() => {
   $('status').textContent = 'Reopen the extension to reconnect.';

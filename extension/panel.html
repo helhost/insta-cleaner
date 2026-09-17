@@ -81,8 +81,6 @@
           <p id="time-hint"></p>
         </div>
         <p id="scope" class="scope"></p>
-        <button id="stop" class="secondary" hidden>Stop search</button
-        ><button id="review" class="primary remove" hidden disabled>Remove likes</button>
       </section>
       <footer>
         <span class="privacy-dot"></span> Your account. Your choice.<span
@@ -91,6 +89,17 @@
         ></span>
       </footer>
     </main>
+    <aside id="action-bar" class="action-bar" aria-label="Search and cleanup actions" hidden>
+      <div class="action-summary">
+        <span class="action-spark" aria-hidden="true">✧</span>
+        <div><strong id="action-count"></strong><span id="action-hint"></span></div>
+      </div>
+      <div class="action-buttons">
+        <button id="stop" class="secondary" hidden>Stop search</button>
+        <button id="review" class="primary remove" hidden disabled>Remove likes</button>
+      </div>
+      <div id="action-progress" class="action-progress" aria-hidden="true" hidden><div></div></div>
+    </aside>
     <dialog id="confirm" aria-labelledby="confirm-title">
       <span class="dialog-symbol" aria-hidden="true">♡</span>
       <h2 id="confirm-title">A little lighter?</h2>

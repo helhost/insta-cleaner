@@ -418,6 +418,11 @@ async def main():
                 await panel.evaluate(
                     "globalThis.savedPanelState=state; state={...state,status:'scanning',startedAt:Date.now()-35000,queueProgress:{completed:17,total:53,workers:12}};render()"
                 )
+                assert (
+                    await panel.locator("#action-hint").inner_text() == "32% searched"
+                )
+                assert await panel.locator("#stop").is_visible()
+                assert await panel.locator("#review").is_hidden()
                 assert await panel.locator("#percent").inner_text() == "32%"
                 assert (
                     await panel.locator("#progress").get_attribute("aria-valuenow")
@@ -436,6 +441,33 @@ async def main():
                 assert await panel.evaluate(
                     "document.documentElement.scrollWidth<=innerWidth"
                 )
+                # The action remains reachable without scrolling, even in a short panel.
+                await panel.set_viewport_size({"width": 320, "height": 540})
+                await panel.evaluate("scrollTo(0, 0)")
+                assert await panel.locator("#review").evaluate(
+                    "el => {const r=el.getBoundingClientRect(); return r.top>=0 && r.bottom<=innerHeight && r.right<=innerWidth}"
+                )
+                await panel.locator("#review").click()
+                assert await panel.locator("#confirm").evaluate("el=>el.open")
+                await panel.locator("#cancel").click()
+                assert clicks == [
+                    "100"
+                ], "Opening the dock confirmation must not remove likes"
+                await panel.evaluate("scrollTo(0, document.body.scrollHeight)")
+                await panel.wait_for_timeout(100)
+                assert await panel.evaluate(
+                    "document.querySelector('footer').getBoundingClientRect().bottom <= document.querySelector('#action-bar').getBoundingClientRect().top"
+                )
+                await panel.screenshot(
+                    path=str(
+                        Path(tempfile.gettempdir()) / "insta-cleaner-action-bar.png"
+                    )
+                )
+                await panel.locator('[data-content="reels"]').click()
+                assert await panel.locator("#action-bar").is_hidden()
+                await panel.locator('[data-content="all"]').click()
+                assert await panel.locator("#action-bar").is_visible()
+                await panel.set_viewport_size({"width": 320, "height": 740})
                 await panel.locator("#open-dates").click()
                 await panel.locator("#pick-start").click()
                 await panel.locator('[data-date="2014-09-30"]').click()
